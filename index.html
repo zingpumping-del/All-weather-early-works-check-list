@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Early Works — Daily Checklist</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #222535;
+    --border: #2e3247;
+    --red: #ff4757;
+    --orange: #ff8c42;
+    --yellow: #ffd166;
+    --green: #06d6a0;
+    --blue: #4cc9f0;
+    --purple: #a855f7;
+    --text: #e8eaf0;
+    --text2: #8b90a7;
+    --text3: #555970;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  /* HEADER */
+  .header {
+    background: linear-gradient(135deg, #1a1d27 0%, #141620 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 16px 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+
+  .app-title {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 2px;
+  }
+
+  .app-subtitle {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1.1;
+  }
+
+  .date-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 6px 12px;
+    text-align: right;
+  }
+
+  .date-day {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .date-full {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* UPLOAD ZONE */
+  .upload-zone {
+    margin: 20px 16px;
+    border: 2px dashed var(--border);
+    border-radius: 16px;
+    padding: 32px 20px;
+    text-align: center;
+    background: var(--surface);
+    transition: border-color 0.2s;
+    cursor: pointer;
+  }
+
+  .upload-zone.dragover { border-color: var(--blue); }
+
+  .upload-icon {
+    font-size: 36px;
+    margin-bottom: 10px;
+  }
+
+  .upload-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .upload-sub {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+
+  .upload-btn {
+    background: var(--blue);
+    color: #0f1117;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 24px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+
+  #fileInput { display: none; }
+
+  /* SUMMARY PILLS */
+  .summary {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .summary::-webkit-scrollbar { display: none; }
+
+  .pill {
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 7px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .pill-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+  }
+
+  /* SECTION */
+  .section {
+    margin: 0 16px 24px;
+  }
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  .section-count {
+    background: var(--surface2);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* TASK CARD */
+  .task-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 8px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    transition: opacity 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .task-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    border-radius: 14px 0 0 14px;
+  }
+
+  .task-card.urgent::before { background: var(--red); }
+  .task-card.soon::before   { background: var(--orange); }
+  .task-card.upcoming::before { background: var(--yellow); }
+  .task-card.future::before { background: var(--text3); }
+  .task-card.booked::before { background: var(--green); }
+  .task-card.archived::before { background: var(--purple); }
+
+  .task-card.booked {
+    opacity: 0.45;
+  }
+
+  .task-card.archived {
+    opacity: 0.3;
+  }
+
+  .check-btn {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    margin-top: 1px;
+  }
+
+  .task-card.booked .check-btn {
+    background: var(--green);
+    border-color: var(--green);
+    color: #0f1117;
+    font-size: 13px;
+  }
+
+  .task-card.archived .check-btn {
+    background: var(--purple);
+    border-color: var(--purple);
+    color: #fff;
+    font-size: 13px;
+  }
+
+  .task-card.urgent .check-btn { border-color: var(--red); }
+  .task-card.soon .check-btn   { border-color: var(--orange); }
+  .task-card.upcoming .check-btn { border-color: var(--yellow); }
+  .task-card.future .check-btn { border-color: var(--text3); }
+
+  .task-body { flex: 1; min-width: 0; }
+
+  .task-site {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .task-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .task-action {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .urgent .task-action   { background: rgba(255,71,87,0.15);  color: var(--red); }
+  .soon .task-action     { background: rgba(255,140,66,0.15); color: var(--orange); }
+  .upcoming .task-action { background: rgba(255,209,102,0.12);color: var(--yellow); }
+  .future .task-action   { background: rgba(139,144,167,0.12);color: var(--text2); }
+  .booked .task-action   { background: rgba(6,214,160,0.12);  color: var(--green); }
+  .archived .task-action { background: rgba(168,85,247,0.12); color: var(--purple); }
+
+  .task-days {
+    font-size: 11px;
+    color: var(--text2);
+  }
+
+  .task-pour {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* LEAD TIMES EDITOR */
+  .settings-toggle {
+    margin: 0 16px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+
+  .settings-panel {
+    margin: 0 16px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: none;
+  }
+
+  .settings-panel.open { display: block; }
+
+  .setting-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .setting-row:last-child { border-bottom: none; }
+
+  .setting-label {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+  }
+
+  .setting-input {
+    width: 60px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px 8px;
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--text);
+    text-align: center;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text3);
+    font-size: 14px;
+  }
+
+  .filter-tabs {
+    display: flex;
+    gap: 6px;
+    padding: 0 16px;
+    margin-bottom: 16px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .filter-tabs::-webkit-scrollbar { display: none; }
+
+  .tab {
+    flex-shrink: 0;
+    padding: 7px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text2);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    transition: all 0.15s;
+  }
+
+  .tab.active {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: #0f1117;
+  }
+
+  .no-tasks {
+    text-align: center;
+    padding: 24px;
+    color: var(--text3);
+    font-size: 13px;
+    background: var(--surface);
+    border-radius: 14px;
+    border: 1px dashed var(--border);
+  }
+
+  /* MISSING PREP ALERT */
+  .alert-banner {
+    margin: 0 16px 16px;
+    background: rgba(255, 71, 87, 0.08);
+    border: 1px solid rgba(255, 71, 87, 0.35);
+    border-radius: 14px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .alert-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-top: 1px;
+  }
+
+  .alert-body { flex: 1; }
+
+  .alert-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 6px;
+  }
+
+  .alert-item {
+    font-size: 13px;
+    color: var(--text);
+    font-weight: 500;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255,71,87,0.12);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .alert-item:last-child { border-bottom: none; }
+
+  .alert-days {
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    color: var(--red);
+    background: rgba(255,71,87,0.12);
+    padding: 2px 7px;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div>
+      <div class="app-title">Monster Homes</div>
+      <div class="app-subtitle">Early Works<br>Checklist</div>
+    </div>
+    <div class="date-badge">
+      <div class="date-day" id="dayName"></div>
+      <div class="date-full" id="dateStr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD -->
+<div id="uploadSection">
+  <div class="upload-zone" id="uploadZone">
+    <div class="upload-icon">📋</div>
+    <div class="upload-title">Upload Early Works Sheet</div>
+    <div class="upload-sub">Drop your .xlsx file here or tap to browse</div>
+    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+    <input type="file" id="fileInput" accept=".xlsx,.xls">
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="mainContent" style="display:none">
+
+  <!-- Re-upload button -->
+  <div style="padding: 12px 16px 0; display:flex; justify-content:flex-end;">
+    <button onclick="resetApp()" style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:12px;color:var(--text2);cursor:pointer;font-family:'DM Sans',sans-serif;">↑ Upload new file</button>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="settings-toggle" onclick="toggleSettings()">
+    <span>⚙️ Lead times (days before pour)</span>
+    <span id="settingsArrow">▼</span>
+  </div>
+  <div class="settings-panel" id="settingsPanel">
+    <div class="setting-row">
+      <span class="setting-label">Slab Piers</span>
+      <input class="setting-input" id="lead_slab" type="number" value="3" min="1" max="60" onchange="renderChecklist()">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Concrete Prep</span>
+      <input class="setting-input" id="lead_prep" type="number" value="21" min="1" max="60" onchange="renderChecklist()">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Inspection</span>
+      <input class="setting-input" id="lead_inspection" type="number" value="4" min="1" max="60" onchange="renderChecklist()">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Penos</span>
+      <input class="setting-input" id="lead_penos" type="number" value="4" min="1" max="60" onchange="renderChecklist()">
+    </div>
+    <div class="setting-row">
+      <span class="setting-label">Concrete Pour</span>
+      <input class="setting-input" id="lead_pour" type="number" value="28" min="1" max="60" onchange="renderChecklist()">
+    </div>
+  </div>
+
+  <!-- SUMMARY -->
+  <div class="summary" id="summaryPills"></div>
+
+  <!-- MISSING PREP ALERTS -->
+  <div id="missingPrepAlerts"></div>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs">
+    <button class="tab active" onclick="setFilter('all', this)">All</button>
+    <button class="tab" onclick="setFilter('urgent', this)">🔴 Book Today</button>
+    <button class="tab" onclick="setFilter('soon', this)">🟠 Tomorrow</button>
+    <button class="tab" onclick="setFilter('upcoming', this)">🟡 In 2 Days</button>
+    <button class="tab" onclick="setFilter('future', this)">⚪ Upcoming</button>
+    <button class="tab" onclick="setFilter('booked', this)">✅ Booked</button>
+    <button class="tab" onclick="setFilter('archived', this)">🟣 Archive</button>
+  </div>
+
+  <!-- TASK LIST -->
+  <div class="section">
+    <div id="taskList"></div>
+  </div>
+
+</div>
+
+<script>
+const today = new Date();
+today.setHours(0,0,0,0);
+
+// Set header date
+const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('dayName').textContent = days[today.getDay()];
+document.getElementById('dateStr').textContent = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+
+let allJobs = [];
+let bookedTasks = JSON.parse(localStorage.getItem('bookedTasks') || '{}');
+let currentFilter = 'all';
+
+// File upload
+const fileInput = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) processFile(e.target.files[0]);
+});
+
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+
+function processFile(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    // Find header row (row with 'Site')
+    let headerRow = -1;
+    for (let i = 0; i < data.length; i++) {
+      if (data[i][0] === 'Site') { headerRow = i; break; }
+    }
+    if (headerRow === -1) { alert('Could not find header row. Make sure the spreadsheet has a "Site" column.'); return; }
+
+    const headers = data[headerRow];
+    const colIdx = {};
+    headers.forEach((h, i) => { if (h) colIdx[String(h).trim()] = i; });
+
+    allJobs = [];
+    for (let i = headerRow + 1; i < data.length; i++) {
+      const row = data[i];
+      const site = String(row[0] || '').trim();
+      if (!site || site.toLowerCase().includes('coming up')) continue;
+
+      // Parse pour date
+      const pourRaw = String(row[colIdx['Concrete Pour']] || '').trim();
+      const pourDate = parseDateStr(pourRaw);
+      if (!pourDate) continue; // skip rows with no pour date
+
+      allJobs.push({
+        site,
+        pourDate,
+        pourRaw,
+        builder: String(row[colIdx['Builder']] || '').trim(),
+        slabPiers:  String(row[colIdx['Slab Piers']] || '').trim(),
+        concPrep:   String(row[colIdx['Concrete Prep.'] || colIdx['Concrete Prep']] || '').trim(),
+        inspection: String(row[colIdx['Inspection']] || '').trim(),
+        penos:      String(row[colIdx['Penos']] || '').trim(),
+      });
+    }
+
+    document.getElementById('uploadSection').style.display = 'none';
+    document.getElementById('mainContent').style.display = 'block';
+    renderChecklist();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function parseDateStr(str) {
+  if (!str || str === '-' || str === '') return null;
+  str = str.trim();
+  // Handle ranges like 20-24/03 — take first date
+  if (str.match(/^\d+-\d+\/\d+/)) {
+    str = str.split('-')[0] + '/' + str.split('/')[1];
+  }
+  // Remove text like AM, PM, TRUSSCORP etc
+  str = str.replace(/[A-Za-z]+/g, '').replace(/\s+/g, '').trim();
+  const parts = str.split('/');
+  if (parts.length === 2) {
+    const d = parseInt(parts[0]), m = parseInt(parts[1]);
+    if (!isNaN(d) && !isNaN(m)) {
+      const date = new Date(2026, m - 1, d);
+      date.setHours(0,0,0,0);
+      return date;
+    }
+  }
+  return null;
+}
+
+function daysUntil(date) {
+  return Math.round((date - today) / (1000 * 60 * 60 * 24));
+}
+
+function getUrgency(daysLeft) {
+  if (daysLeft <= 0) return 'urgent';    // red = book today or overdue
+  if (daysLeft === 1) return 'soon';     // orange = book tomorrow
+  if (daysLeft === 2) return 'upcoming'; // yellow = coming up in 2 days
+  return 'future';                       // still show but lower priority
+}
+
+function taskKey(site, task) {
+  return `${site}__${task}__${today.toDateString()}`;
+}
+
+function isBooked(site, task) {
+  return !!bookedTasks[`${site}__${task}`];
+}
+
+function isArchived(site, task) {
+  const entry = bookedTasks[`${site}__${task}`];
+  if (!entry) return false;
+  const bookedDate = new Date(entry.date);
+  bookedDate.setHours(0,0,0,0);
+  const daysSinceBooked = Math.round((today - bookedDate) / (1000 * 60 * 60 * 24));
+  return daysSinceBooked > 2;
+}
+
+function toggleBooked(site, task, el) {
+  const key = `${site}__${task}`;
+  if (bookedTasks[key]) {
+    delete bookedTasks[key];
+  } else {
+    bookedTasks[key] = { date: today.toISOString() };
+  }
+  localStorage.setItem('bookedTasks', JSON.stringify(bookedTasks));
+  renderChecklist();
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderChecklist();
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const arrow = document.getElementById('settingsArrow');
+  panel.classList.toggle('open');
+  arrow.textContent = panel.classList.contains('open') ? '▲' : '▼';
+}
+
+function renderChecklist() {
+  const leads = {
+    slabPiers:  parseInt(document.getElementById('lead_slab').value),
+    concPrep:   parseInt(document.getElementById('lead_prep').value),
+    inspection: parseInt(document.getElementById('lead_inspection').value),
+    penos:      parseInt(document.getElementById('lead_penos').value),
+    pour:       parseInt(document.getElementById('lead_pour').value),
+  };
+
+  // Build task list
+  const tasks = [];
+
+  allJobs.forEach(job => {
+    const daysToP = daysUntil(job.pourDate);
+
+    const checks = [
+      { key: 'slabPiers',  label: 'Book Slab Piers',     lead: leads.slabPiers,  done: job.slabPiers && job.slabPiers !== '-' },
+      { key: 'concPrep',   label: 'Book Concrete Prep',  lead: leads.concPrep,   done: job.concPrep && job.concPrep !== '-' },
+      { key: 'inspection', label: 'Book Inspection',     lead: leads.inspection, done: job.inspection && job.inspection !== '-' },
+      { key: 'penos',      label: 'Book Penos',          lead: leads.penos,      done: job.penos && job.penos !== '-' },
+      { key: 'pour',       label: 'Confirm Pour',        lead: leads.pour,       done: false },
+    ];
+
+    checks.forEach(c => {
+      const daysLeft = daysToP - c.lead; // days until we should book
+      // Show if: not already filled in the sheet AND pour is in the future or very recent
+      if (daysToP < -3) return; // skip very old pours
+      if (c.done && !isBooked(job.site, c.key)) return; // already has date in sheet, skip unless manually booked
+
+      const booked = isBooked(job.site, c.key);
+      const archived = booked && isArchived(job.site, c.key);
+      const urgency = archived ? 'archived' : booked ? 'booked' : getUrgency(daysLeft);
+
+      // Only show tasks that are relevant (within window)
+      if (!booked && daysLeft > 35) return;
+
+      tasks.push({
+        site: job.site,
+        builder: job.builder,
+        label: c.label,
+        key: c.key,
+        pourRaw: job.pourRaw,
+        daysLeft,
+        daysToP,
+        urgency,
+        booked,
+        archived,
+      });
+    });
+  });
+
+  // Sort: urgent first, archived last
+  const urgencyOrder = { urgent: 0, soon: 1, upcoming: 2, future: 3, booked: 4, archived: 5 };
+  tasks.sort((a, b) => {
+    const ao = urgencyOrder[a.urgency] ?? 3;
+    const bo = urgencyOrder[b.urgency] ?? 3;
+    if (ao !== bo) return ao - bo;
+    return a.daysLeft - b.daysLeft;
+  });
+
+  // Summary pills
+  const counts = { urgent: 0, soon: 0, upcoming: 0, future: 0, booked: 0, archived: 0 };
+  tasks.forEach(t => counts[t.urgency]++);
+
+  document.getElementById('summaryPills').innerHTML = `
+    <div class="pill"><span class="pill-dot" style="background:var(--red)"></span>${counts.urgent} today</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--orange)"></span>${counts.soon} tomorrow</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--yellow)"></span>${counts.upcoming} in 2 days</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--text3)"></span>${counts.future} upcoming</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--green)"></span>${counts.booked} booked</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--purple)"></span>${counts.archived} archived</div>
+  `;
+
+  // MISSING PREP DATE ALERTS — flag jobs with pour date within 21 days but no concrete prep date
+  const missingPrep = allJobs.filter(job => {
+    const daysToP = daysUntil(job.pourDate);
+    const hasPrep = job.concPrep && job.concPrep !== '-' && job.concPrep !== '';
+    return !hasPrep && daysToP <= 21 && daysToP > -3;
+  });
+
+  const alertEl = document.getElementById('missingPrepAlerts');
+  if (missingPrep.length > 0) {
+    alertEl.innerHTML = `
+      <div class="alert-banner">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-body">
+          <div class="alert-title">Missing Concrete Prep Date</div>
+          ${missingPrep.map(job => {
+            const dtp = daysUntil(job.pourDate);
+            const label = dtp <= 0 ? 'Pour overdue!' : dtp === 1 ? 'Pour tomorrow!' : `${dtp}d to pour`;
+            return `<div class="alert-item">
+              <span>${job.site}</span>
+              <span class="alert-days">${label}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  } else {
+    alertEl.innerHTML = '';
+  }
+
+  // Filter
+  const filtered = currentFilter === 'all' ? tasks : tasks.filter(t => t.urgency === currentFilter);
+
+  const list = document.getElementById('taskList');
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="no-tasks">No tasks in this category 🎉</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map(t => {
+    const daysLabel = t.daysLeft <= 0
+      ? (t.daysLeft === 0 ? 'Book <b>today</b>' : `<b>${Math.abs(t.daysLeft)}d overdue</b>`)
+      : `Book in <b>${t.daysLeft}d</b>`;
+
+    const pourLabel = `Pour: ${t.pourRaw}`;
+    const builderLabel = t.builder ? ` · ${t.builder}` : '';
+
+    return `
+      <div class="task-card ${t.urgency}" id="card_${t.site}_${t.key}">
+        <button class="check-btn" onclick="toggleBooked('${t.site.replace(/'/g,"\\'")}', '${t.key}', this)">
+          ${t.booked ? '✓' : ''}
+        </button>
+        <div class="task-body">
+          <div class="task-site">${t.site}</div>
+          <div class="task-meta">
+            <span class="task-action">${t.label}</span>
+            <span class="task-days">${t.archived ? 'Archived' : t.booked ? 'Booked ✓' : daysLabel}</span>
+          </div>
+          <div class="task-pour" style="margin-top:4px">${pourLabel}${builderLabel}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function resetApp() {
+  allJobs = [];
+  document.getElementById('uploadSection').style.display = 'block';
+  document.getElementById('mainContent').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+</script>
+</body>
+</html>
