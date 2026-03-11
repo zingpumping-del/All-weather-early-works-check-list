@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Early Works — Daily Checklist</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=DM+Mono:wght@400;500&display=swap');
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #222535;
+  --border: #2e3247;
+  --red: #ff4757;
+  --orange: #ff8c42;
+  --yellow: #ffd166;
+  --green: #06d6a0;
+  --blue: #4cc9f0;
+  --purple: #a855f7;
+  --text: #e8eaf0;
+  --text2: #8b90a7;
+  --text3: #555970;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding-bottom: 60px;
+}
+
+/* ── LOGIN ── */
+#loginScreen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: radial-gradient(ellipse at 60% 20%, #1a2240 0%, #0f1117 60%);
+}
+
+.login-logo {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+
+.login-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.login-sub {
+  font-size: 14px;
+  color: var(--text2);
+  margin-bottom: 36px;
+  text-align: center;
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 380px;
+}
+
+.field-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+
+.field-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  color: var(--text);
+  margin-bottom: 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.field-input:focus { border-color: var(--blue); }
+
+.login-btn {
+  width: 100%;
+  background: var(--blue);
+  color: #0f1117;
+  border: none;
+  border-radius: 12px;
+  padding: 14px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  margin-top: 4px;
+  transition: opacity 0.2s;
+}
+
+.login-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.login-error {
+  background: rgba(255,71,87,0.1);
+  border: 1px solid rgba(255,71,87,0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: var(--red);
+  margin-top: 12px;
+  display: none;
+}
+
+/* ── HEADER ── */
+.header {
+  background: linear-gradient(135deg, #1a1d27 0%, #141620 100%);
+  border-bottom: 1px solid var(--border);
+  padding: 18px 16px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.app-title {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 2px;
+}
+
+.app-subtitle {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.date-badge {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 5px 10px;
+  text-align: right;
+}
+
+.date-day { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.1em; }
+.date-full { font-size: 12px; font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; }
+
+.role-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.role-admin   { background: rgba(76,201,240,0.15); color: var(--blue); }
+.role-readonly { background: rgba(139,144,167,0.15); color: var(--text2); }
+
+.logout-btn {
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  color: var(--text3);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+}
+
+/* ── UPLOAD ── */
+.upload-zone {
+  margin: 16px 16px 0;
+  border: 2px dashed var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  background: var(--surface);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+.upload-zone.dragover { border-color: var(--blue); }
+.upload-zone-title { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.upload-zone-sub { font-size: 12px; color: var(--text2); margin-bottom: 12px; }
+
+.upload-btn {
+  background: var(--blue);
+  color: #0f1117;
+  border: none;
+  border-radius: 9px;
+  padding: 8px 20px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+#fileInput { display: none; }
+
+.upload-status {
+  margin: 8px 16px 0;
+  font-size: 12px;
+  color: var(--text2);
+  text-align: center;
+  min-height: 18px;
+}
+
+/* ── SUMMARY PILLS ── */
+.summary {
+  display: flex;
+  gap: 7px;
+  padding: 14px 16px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.summary::-webkit-scrollbar { display: none; }
+
+.pill {
+  flex-shrink: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pill-dot { width: 7px; height: 7px; border-radius: 50%; }
+
+/* ── ALERT BANNER ── */
+.alert-banner {
+  margin: 14px 16px 0;
+  background: rgba(255,71,87,0.08);
+  border: 1px solid rgba(255,71,87,0.3);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.alert-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+.alert-body { flex: 1; }
+.alert-title { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--red); margin-bottom: 6px; }
+
+.alert-item {
+  font-size: 12px;
+  color: var(--text);
+  font-weight: 500;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255,71,87,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.alert-item:last-child { border-bottom: none; }
+.alert-item-site { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.alert-days {
+  font-size: 10px;
+  font-family: 'DM Mono', monospace;
+  color: var(--red);
+  background: rgba(255,71,87,0.12);
+  padding: 2px 6px;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+
+/* ── FILTER TABS ── */
+.filter-tabs {
+  display: flex;
+  gap: 6px;
+  padding: 14px 16px 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.filter-tabs::-webkit-scrollbar { display: none; }
+
+.tab {
+  flex-shrink: 0;
+  padding: 6px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+}
+
+.tab.active { background: var(--blue); border-color: var(--blue); color: #0f1117; }
+
+/* ── TASK CARDS ── */
+.section { margin: 14px 16px 0; }
+
+.task-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 13px;
+  margin-bottom: 8px;
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  position: relative;
+  overflow: hidden;
+  transition: opacity 0.3s;
+}
+
+.task-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
+}
+
+.task-card.urgent::before   { background: var(--red); }
+.task-card.soon::before     { background: var(--orange); }
+.task-card.upcoming::before { background: var(--yellow); }
+.task-card.future::before   { background: var(--text3); }
+.task-card.booked::before   { background: var(--green); }
+.task-card.archived::before { background: var(--purple); }
+
+.task-card.booked   { opacity: 0.45; }
+.task-card.archived { opacity: 0.3; }
+
+.check-btn {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-top: 1px;
+  color: transparent;
+  font-size: 13px;
+}
+
+.task-card.urgent   .check-btn { border-color: var(--red); }
+.task-card.soon     .check-btn { border-color: var(--orange); }
+.task-card.upcoming .check-btn { border-color: var(--yellow); }
+.task-card.future   .check-btn { border-color: var(--text3); }
+
+.task-card.booked .check-btn {
+  background: var(--green); border-color: var(--green);
+  color: #0f1117;
+}
+
+.task-card.archived .check-btn {
+  background: var(--purple); border-color: var(--purple);
+  color: #fff;
+}
+
+.readonly-mode .check-btn { cursor: not-allowed; opacity: 0.5; }
+
+.task-body { flex: 1; min-width: 0; }
+
+.task-site {
+  font-size: 14px; font-weight: 600; color: var(--text);
+  margin-bottom: 4px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+.task-meta { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+
+.task-action {
+  font-size: 11px; font-weight: 600;
+  padding: 3px 8px; border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+}
+
+.urgent   .task-action { background: rgba(255,71,87,0.15);   color: var(--red); }
+.soon     .task-action { background: rgba(255,140,66,0.15);  color: var(--orange); }
+.upcoming .task-action { background: rgba(255,209,102,0.12); color: var(--yellow); }
+.future   .task-action { background: rgba(139,144,167,0.12); color: var(--text2); }
+.booked   .task-action { background: rgba(6,214,160,0.12);   color: var(--green); }
+.archived .task-action { background: rgba(168,85,247,0.12);  color: var(--purple); }
+
+.task-days  { font-size: 11px; color: var(--text2); }
+.task-pour  { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 4px; }
+
+.no-tasks {
+  text-align: center; padding: 28px;
+  color: var(--text3); font-size: 13px;
+  background: var(--surface); border-radius: 14px;
+  border: 1px dashed var(--border);
+}
+
+/* ── SETTINGS ── */
+.settings-toggle {
+  margin: 14px 16px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 11px 15px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text2);
+}
+
+.settings-panel {
+  margin: 6px 16px 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  display: none;
+}
+
+.settings-panel.open { display: block; }
+
+.setting-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-row:last-child { border-bottom: none; }
+.setting-label { font-size: 13px; color: var(--text); font-weight: 500; }
+
+.setting-input {
+  width: 58px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 5px 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+  text-align: center;
+}
+
+/* ── LOADING ── */
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: var(--text2);
+  font-size: 14px;
+}
+
+.spinner {
+  width: 28px; height: 28px;
+  border: 3px solid var(--border);
+  border-top-color: var(--blue);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 12px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen">
+  <div class="login-logo">Monster Homes</div>
+  <div class="login-title">Early Works</div>
+  <div class="login-sub">Sign in to continue</div>
+  <div class="login-card">
+    <div class="field-label">Email</div>
+    <input class="field-input" type="email" id="loginEmail" placeholder="you@example.com" autocomplete="email">
+    <div class="field-label">Password</div>
+    <input class="field-input" type="password" id="loginPassword" placeholder="••••••••" autocomplete="current-password">
+    <button class="login-btn" id="loginBtn" onclick="handleLogin()">Sign In</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ── -->
+<div id="appScreen" style="display:none">
+
+  <div class="header">
+    <div class="header-top">
+      <div>
+        <div class="app-title">Monster Homes</div>
+        <div class="app-subtitle">Early Works<br>Checklist</div>
+      </div>
+      <div class="header-right">
+        <div class="date-badge">
+          <div class="date-day" id="dayName"></div>
+          <div class="date-full" id="dateStr"></div>
+        </div>
+        <div id="roleBadge" class="role-badge"></div>
+        <button class="logout-btn" onclick="handleLogout()">Sign out</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- UPLOAD (admin only) -->
+  <div id="uploadSection" style="display:none">
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-zone-title">📋 Upload Early Works Sheet</div>
+      <div class="upload-zone-sub">Drop your .xlsx file here or tap to browse</div>
+      <button class="upload-btn" onclick="document.getElementById('fileInput').click()">Choose File</button>
+      <input type="file" id="fileInput" accept=".xlsx,.xls">
+    </div>
+    <div class="upload-status" id="uploadStatus"></div>
+  </div>
+
+  <!-- SETTINGS (admin only) -->
+  <div id="settingsSection" style="display:none">
+    <div class="settings-toggle" onclick="toggleSettings()">
+      <span>⚙️ Lead times (days before pour)</span>
+      <span id="settingsArrow">▼</span>
+    </div>
+    <div class="settings-panel" id="settingsPanel">
+      <div class="setting-row">
+        <span class="setting-label">Slab Piers</span>
+        <input class="setting-input" id="lead_slab" type="number" value="3" min="1" max="60" onchange="renderChecklist()">
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Concrete Prep</span>
+        <input class="setting-input" id="lead_prep" type="number" value="21" min="1" max="60" onchange="renderChecklist()">
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Inspection</span>
+        <input class="setting-input" id="lead_inspection" type="number" value="4" min="1" max="60" onchange="renderChecklist()">
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Penos</span>
+        <input class="setting-input" id="lead_penos" type="number" value="4" min="1" max="60" onchange="renderChecklist()">
+      </div>
+      <div class="setting-row">
+        <span class="setting-label">Concrete Pour</span>
+        <input class="setting-input" id="lead_pour" type="number" value="28" min="1" max="60" onchange="renderChecklist()">
+      </div>
+    </div>
+  </div>
+
+  <!-- SUMMARY PILLS -->
+  <div class="summary" id="summaryPills"></div>
+
+  <!-- MISSING PREP ALERTS -->
+  <div id="missingPrepAlerts"></div>
+
+  <!-- FILTER TABS -->
+  <div class="filter-tabs">
+    <button class="tab active" onclick="setFilter('all', this)">All</button>
+    <button class="tab" onclick="setFilter('urgent', this)">🔴 Today</button>
+    <button class="tab" onclick="setFilter('soon', this)">🟠 Tomorrow</button>
+    <button class="tab" onclick="setFilter('upcoming', this)">🟡 2 Days</button>
+    <button class="tab" onclick="setFilter('future', this)">⚪ Upcoming</button>
+    <button class="tab" onclick="setFilter('booked', this)">✅ Booked</button>
+    <button class="tab" onclick="setFilter('archived', this)">🟣 Archive</button>
+  </div>
+
+  <!-- TASK LIST -->
+  <div class="section">
+    <div id="taskList"><div class="loading"><div class="spinner"></div>Loading jobs…</div></div>
+  </div>
+
+</div>
+
+<script>
+// ── SUPABASE INIT ──
+const SUPABASE_URL = 'https://rzejreekpxilugmptojr.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_pvPPG-kBvMGdGKXOFXJCng_QUMb4dxA';
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── STATE ──
+const today = new Date(); today.setHours(0,0,0,0);
+const days   = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+document.getElementById('dayName').textContent = days[today.getDay()];
+document.getElementById('dateStr').textContent  = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
+
+let currentUser   = null;
+let currentRole   = null;
+let allJobs       = [];
+let bookingsMap   = {};   // { "site__taskkey": { booked_at: ... } }
+let currentFilter = 'all';
+
+// ── AUTH ──
+async function handleLogin() {
+  const email    = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const btn      = document.getElementById('loginBtn');
+  const err      = document.getElementById('loginError');
+  err.style.display = 'none';
+  btn.disabled = true; btn.textContent = 'Signing in…';
+
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    err.textContent = error.message;
+    err.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Sign In';
+    return;
+  }
+  await initApp(data.user);
+}
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  currentUser = null; currentRole = null; allJobs = []; bookingsMap = {};
+  document.getElementById('appScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+}
+
+async function initApp(user) {
+  currentUser = user;
+
+  // Get role from profiles table
+  const { data: profile } = await sb.from('profiles').select('role').eq('id', user.id).single();
+  currentRole = profile?.role || 'readonly';
+
+  // Update UI for role
+  const roleBadge = document.getElementById('roleBadge');
+  roleBadge.textContent   = currentRole === 'admin' ? 'Admin' : 'Read Only';
+  roleBadge.className     = `role-badge role-${currentRole}`;
+
+  // Show/hide admin sections
+  document.getElementById('uploadSection').style.display  = currentRole === 'admin' ? 'block' : 'none';
+  document.getElementById('settingsSection').style.display = currentRole === 'admin' ? 'block' : 'none';
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display   = 'block';
+
+  await loadData();
+}
+
+// Check for existing session on load
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session?.user) initApp(session.user);
+});
+
+// ── FILE UPLOAD ──
+const fileInput  = document.getElementById('fileInput');
+const uploadZone = document.getElementById('uploadZone');
+
+fileInput.addEventListener('change', e => { if (e.target.files[0]) processFile(e.target.files[0]); });
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('dragover'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('dragover');
+  if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+});
+
+async function processFile(file) {
+  const status = document.getElementById('uploadStatus');
+  status.textContent = '⏳ Reading spreadsheet…';
+
+  const reader = new FileReader();
+  reader.onload = async e => {
+    const wb   = XLSX.read(e.target.result, { type: 'array' });
+    const ws   = wb.Sheets[wb.SheetNames[0]];
+    const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+    // Find header row
+    let headerRow = -1;
+    for (let i = 0; i < data.length; i++) {
+      if (String(data[i][0]).trim() === 'Site') { headerRow = i; break; }
+    }
+    if (headerRow === -1) { status.textContent = '❌ Could not find header row.'; return; }
+
+    const headers = data[headerRow];
+    const col = {};
+    headers.forEach((h, i) => { if (h) col[String(h).trim()] = i; });
+
+    const jobs = [];
+    for (let i = headerRow + 1; i < data.length; i++) {
+      const row  = data[i];
+      const site = String(row[0] || '').trim();
+      if (!site || site.toLowerCase().includes('coming up')) continue;
+
+      const pourRaw = String(row[col['Concrete Pour']] || '').trim();
+      if (!pourRaw || pourRaw === '-') continue;
+
+      jobs.push({
+        site,
+        builder:       String(row[col['Builder']]        || '').trim(),
+        supervisor:    String(row[col['Supervisor']]      || '').trim(),
+        cut_site:      String(row[col['Cut Site']]        || '').trim(),
+        set_out:       String(row[col['Set out']]         || '').trim(),
+        slab_piers:    String(row[col['Slab Piers']]      || '').trim(),
+        drainer:       String(row[col['Drainer']]         || '').trim(),
+        dirt_removal:  String(row[col['Dirt Removal']]    || '').trim(),
+        sand_up:       String(row[col['Sand Up']]         || '').trim(),
+        concrete_prep: String(row[col['Concrete Prep.'] ?? col['Concrete Prep']] || '').trim(),
+        inspection:    String(row[col['Inspection']]      || '').trim(),
+        penos:         String(row[col['Penos']]           || '').trim(),
+        concrete_pour: pourRaw,
+        site_backfill: String(row[col['Site Backfill']]   || '').trim(),
+        termite:       String(row[col['Termite']]         || '').trim(),
+        frame_delivery:String(row[col['Frame Delivery']]  || '').trim(),
+        frame_start:   String(row[col['Frame Start Date']]|| '').trim(),
+        uploaded_at:   new Date().toISOString(),
+      });
+    }
+
+    status.textContent = `⏳ Saving ${jobs.length} jobs to database…`;
+
+    // Clear existing jobs and insert fresh
+    const { error: delErr } = await sb.from('jobs').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (delErr) { status.textContent = '❌ Error clearing old data: ' + delErr.message; return; }
+
+    const { error: insErr } = await sb.from('jobs').insert(jobs);
+    if (insErr) { status.textContent = '❌ Error saving jobs: ' + insErr.message; return; }
+
+    status.textContent = `✅ ${jobs.length} jobs saved successfully`;
+    setTimeout(() => { status.textContent = ''; }, 3000);
+
+    await loadData();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ── LOAD DATA FROM SUPABASE ──
+async function loadData() {
+  document.getElementById('taskList').innerHTML = '<div class="loading"><div class="spinner"></div>Loading…</div>';
+
+  const [{ data: jobs }, { data: bookings }] = await Promise.all([
+    sb.from('jobs').select('*').order('uploaded_at', { ascending: false }),
+    sb.from('bookings').select('*'),
+  ]);
+
+  allJobs = jobs || [];
+
+  bookingsMap = {};
+  (bookings || []).forEach(b => {
+    bookingsMap[`${b.site}__${b.task_key}`] = { booked_at: b.booked_at };
+  });
+
+  renderChecklist();
+}
+
+// ── BOOKING TOGGLE ──
+async function toggleBooked(site, taskKey) {
+  if (currentRole !== 'admin') return;
+  const key = `${site}__${taskKey}`;
+
+  if (bookingsMap[key]) {
+    // Unbook
+    await sb.from('bookings').delete().eq('site', site).eq('task_key', taskKey);
+    delete bookingsMap[key];
+  } else {
+    // Book
+    const { data } = await sb.from('bookings').insert({ site, task_key: taskKey }).select().single();
+    if (data) bookingsMap[key] = { booked_at: data.booked_at };
+  }
+  renderChecklist();
+}
+
+// ── HELPERS ──
+function parseDateStr(str) {
+  if (!str || str === '-') return null;
+  str = str.trim();
+  if (str.match(/^\d+-\d+\/\d+/)) str = str.split('-')[0] + '/' + str.split('/')[1];
+  str = str.replace(/[A-Za-z]+/g, '').replace(/\s+/g, '').trim();
+  const parts = str.split('/');
+  if (parts.length === 2) {
+    const d = parseInt(parts[0]), m = parseInt(parts[1]);
+    if (!isNaN(d) && !isNaN(m)) {
+      const date = new Date(2026, m - 1, d);
+      date.setHours(0,0,0,0);
+      return date;
+    }
+  }
+  return null;
+}
+
+function daysUntil(date) {
+  return Math.round((date - today) / (1000 * 60 * 60 * 24));
+}
+
+function getUrgency(daysLeft) {
+  if (daysLeft <= 0)  return 'urgent';
+  if (daysLeft === 1) return 'soon';
+  if (daysLeft === 2) return 'upcoming';
+  return 'future';
+}
+
+function isBooked(site, taskKey) {
+  return !!bookingsMap[`${site}__${taskKey}`];
+}
+
+function isArchived(site, taskKey) {
+  const entry = bookingsMap[`${site}__${taskKey}`];
+  if (!entry) return false;
+  const bookedDate = new Date(entry.booked_at);
+  bookedDate.setHours(0,0,0,0);
+  return Math.round((today - bookedDate) / 86400000) > 2;
+}
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  renderChecklist();
+}
+
+function toggleSettings() {
+  const panel = document.getElementById('settingsPanel');
+  const arrow = document.getElementById('settingsArrow');
+  panel.classList.toggle('open');
+  arrow.textContent = panel.classList.contains('open') ? '▲' : '▼';
+}
+
+// ── RENDER ──
+function renderChecklist() {
+  const leads = {
+    slabPiers:  parseInt(document.getElementById('lead_slab')?.value  || 3),
+    concPrep:   parseInt(document.getElementById('lead_prep')?.value  || 21),
+    inspection: parseInt(document.getElementById('lead_inspection')?.value || 4),
+    penos:      parseInt(document.getElementById('lead_penos')?.value || 4),
+    pour:       parseInt(document.getElementById('lead_pour')?.value  || 28),
+  };
+
+  const tasks = [];
+
+  allJobs.forEach(job => {
+    const pourDate = parseDateStr(job.concrete_pour);
+    if (!pourDate) return;
+    const daysToP = daysUntil(pourDate);
+    if (daysToP < -3) return;
+
+    const checks = [
+      { key: 'slabPiers',  label: 'Book Slab Piers',    lead: leads.slabPiers,  done: job.slab_piers    && job.slab_piers    !== '-' },
+      { key: 'concPrep',   label: 'Book Concrete Prep', lead: leads.concPrep,   done: job.concrete_prep && job.concrete_prep !== '-' },
+      { key: 'inspection', label: 'Book Inspection',    lead: leads.inspection, done: job.inspection    && job.inspection    !== '-' },
+      { key: 'penos',      label: 'Book Penos',         lead: leads.penos,      done: job.penos         && job.penos         !== '-' },
+      { key: 'pour',       label: 'Confirm Pour',       lead: leads.pour,       done: false },
+    ];
+
+    checks.forEach(c => {
+      const daysLeft = daysToP - c.lead;
+      if (c.done && !isBooked(job.site, c.key)) return;
+      const booked   = isBooked(job.site, c.key);
+      const archived = booked && isArchived(job.site, c.key);
+      const urgency  = archived ? 'archived' : booked ? 'booked' : getUrgency(daysLeft);
+      if (!booked && daysLeft > 35) return;
+
+      tasks.push({ site: job.site, builder: job.builder, label: c.label, key: c.key,
+        pourRaw: job.concrete_pour, daysLeft, daysToP, urgency, booked, archived });
+    });
+  });
+
+  // Sort
+  const order = { urgent: 0, soon: 1, upcoming: 2, future: 3, booked: 4, archived: 5 };
+  tasks.sort((a, b) => {
+    const diff = (order[a.urgency] ?? 3) - (order[b.urgency] ?? 3);
+    return diff !== 0 ? diff : a.daysLeft - b.daysLeft;
+  });
+
+  // Summary pills
+  const counts = { urgent: 0, soon: 0, upcoming: 0, future: 0, booked: 0, archived: 0 };
+  tasks.forEach(t => counts[t.urgency]++);
+  document.getElementById('summaryPills').innerHTML = `
+    <div class="pill"><span class="pill-dot" style="background:var(--red)"></span>${counts.urgent} today</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--orange)"></span>${counts.soon} tomorrow</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--yellow)"></span>${counts.upcoming} 2 days</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--text3)"></span>${counts.future} upcoming</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--green)"></span>${counts.booked} booked</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--purple)"></span>${counts.archived} archived</div>
+  `;
+
+  // Missing prep alerts
+  const missingPrep = allJobs.filter(job => {
+    const pd = parseDateStr(job.concrete_pour);
+    if (!pd) return false;
+    const dtp = daysUntil(pd);
+    return (!job.concrete_prep || job.concrete_prep === '-' || job.concrete_prep === '') && dtp <= 21 && dtp > -3;
+  });
+
+  const alertEl = document.getElementById('missingPrepAlerts');
+  if (missingPrep.length > 0) {
+    alertEl.innerHTML = `
+      <div class="alert-banner">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-body">
+          <div class="alert-title">Missing Concrete Prep Date</div>
+          ${missingPrep.map(job => {
+            const dtp = daysUntil(parseDateStr(job.concrete_pour));
+            const lbl = dtp <= 0 ? 'Overdue!' : dtp === 1 ? 'Tomorrow!' : `${dtp}d to pour`;
+            return `<div class="alert-item"><span class="alert-item-site">${job.site}</span><span class="alert-days">${lbl}</span></div>`;
+          }).join('')}
+        </div>
+      </div>`;
+  } else {
+    alertEl.innerHTML = '';
+  }
+
+  // Filter & render
+  const filtered = currentFilter === 'all' ? tasks : tasks.filter(t => t.urgency === currentFilter);
+  const list = document.getElementById('taskList');
+
+  if (allJobs.length === 0) {
+    list.innerHTML = `<div class="no-tasks">No jobs loaded yet${currentRole === 'admin' ? ' — upload your spreadsheet above' : ''}</div>`;
+    return;
+  }
+
+  if (filtered.length === 0) {
+    list.innerHTML = `<div class="no-tasks">No tasks in this category 🎉</div>`;
+    return;
+  }
+
+  const readonlyClass = currentRole !== 'admin' ? 'readonly-mode' : '';
+
+  list.innerHTML = filtered.map(t => {
+    const daysLabel = t.daysLeft <= 0
+      ? (t.daysLeft === 0 ? 'Book <b>today</b>' : `<b>${Math.abs(t.daysLeft)}d overdue</b>`)
+      : `Book in <b>${t.daysLeft}d</b>`;
+    const pourLabel    = `Pour: ${t.pourRaw}`;
+    const builderLabel = t.builder ? ` · ${t.builder}` : '';
+    const statusLabel  = t.archived ? 'Archived' : t.booked ? 'Booked ✓' : daysLabel;
+    const siteEsc      = t.site.replace(/'/g, "\\'");
+
+    return `
+      <div class="task-card ${t.urgency} ${readonlyClass}">
+        <button class="check-btn" onclick="${currentRole === 'admin' ? `toggleBooked('${siteEsc}','${t.key}')` : ''}">
+          ${t.booked ? '✓' : ''}
+        </button>
+        <div class="task-body">
+          <div class="task-site">${t.site}</div>
+          <div class="task-meta">
+            <span class="task-action">${t.label}</span>
+            <span class="task-days">${statusLabel}</span>
+          </div>
+          <div class="task-pour">${pourLabel}${builderLabel}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
