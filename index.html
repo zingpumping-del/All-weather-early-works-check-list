@@ -818,14 +818,45 @@ function parseDateStr(str) {
   return null;
 }
 
+// Count business days (Mon-Fri) between today and a target date
+function businessDaysUntil(targetDate) {
+  if (!targetDate) return null;
+  const start = new Date(today);
+  const end   = new Date(targetDate);
+  end.setHours(0,0,0,0);
+
+  if (start >= end) {
+    // Count backwards for overdue
+    let count = 0;
+    const d = new Date(end);
+    while (d < start) {
+      d.setDate(d.getDate() + 1);
+      const day = d.getDay();
+      if (day !== 0 && day !== 6) count--;
+    }
+    return count;
+  }
+
+  let count = 0;
+  const d = new Date(start);
+  while (d < end) {
+    d.setDate(d.getDate() + 1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) count++;
+  }
+  return count;
+}
+
+// Calendar days (used for old daysToP pour-date window checks)
 function daysUntil(date) {
   return Math.round((date - today) / (1000 * 60 * 60 * 24));
 }
 
-function getUrgency(daysLeft) {
-  if (daysLeft <= 0)  return 'urgent';
-  if (daysLeft === 1) return 'soon';
-  if (daysLeft === 2) return 'upcoming';
+// Business days urgency — 1 = tomorrow (next business day), 2 = day after etc
+function getUrgency(bizDaysLeft) {
+  if (bizDaysLeft <= 0)  return 'urgent';   // overdue or book today
+  if (bizDaysLeft === 1) return 'soon';     // next business day
+  if (bizDaysLeft === 2) return 'upcoming'; // 2 business days away
   return 'future';
 }
 
@@ -874,15 +905,30 @@ function renderChecklist() {
     if (daysToP < -3) return;
 
     const checks = [
-      { key: 'slabPiers',  label: 'Book Slab Piers',    lead: leads.slabPiers,  done: job.slab_piers    && job.slab_piers    !== '-' },
-      { key: 'concPrep',   label: 'Book Concrete Prep', lead: leads.concPrep,   done: job.concrete_prep && job.concrete_prep !== '-' },
-      { key: 'inspection', label: 'Book Inspection',    lead: leads.inspection, done: job.inspection    && job.inspection    !== '-' },
-      { key: 'penos',      label: 'Book Penos',         lead: leads.penos,      done: job.penos         && job.penos         !== '-' },
-      { key: 'pour',       label: 'Confirm Pour',       lead: leads.pour,       done: false },
+      { key: 'slabPiers',  label: 'Book Slab Piers',    lead: leads.slabPiers,  done: job.slab_piers    && job.slab_piers    !== '-', bizDays: true  },
+      { key: 'concPrep',   label: 'Book Concrete Prep', lead: leads.concPrep,   done: job.concrete_prep && job.concrete_prep !== '-', bizDays: false },
+      { key: 'inspection', label: 'Book Inspection',    lead: leads.inspection, done: job.inspection    && job.inspection    !== '-', bizDays: true  },
+      { key: 'penos',      label: 'Book Penos',         lead: leads.penos,      done: job.penos         && job.penos         !== '-', bizDays: true  },
+      { key: 'pour',       label: 'Confirm Pour',       lead: leads.pour,       done: false,                                          bizDays: false },
     ];
 
     checks.forEach(c => {
-      const daysLeft = daysToP - c.lead;
+      let daysLeft;
+      if (c.bizDays) {
+        // Work backwards from pourDate by c.lead business days
+        const targetDate = new Date(pourDate);
+        let bizDaysBack = c.lead;
+        while (bizDaysBack > 0) {
+          targetDate.setDate(targetDate.getDate() - 1);
+          const day = targetDate.getDay();
+          if (day !== 0 && day !== 6) bizDaysBack--;
+        }
+        daysLeft = businessDaysUntil(targetDate);
+      } else {
+        // Calendar days
+        daysLeft = daysToP - c.lead;
+      }
+
       if (c.done && !isBooked(job.site, c.key)) return;
       const booked   = isBooked(job.site, c.key);
       const archived = booked && isArchived(job.site, c.key);
@@ -890,7 +936,7 @@ function renderChecklist() {
       if (!booked && daysLeft > 35) return;
 
       tasks.push({ site: job.site, builder: job.builder, label: c.label, key: c.key,
-        pourRaw: job.concrete_pour, daysLeft, daysToP, urgency, booked, archived });
+        pourRaw: job.concrete_pour, daysLeft, daysToP, urgency, booked, archived, bizDays: c.bizDays });
     });
   });
 
@@ -906,8 +952,8 @@ function renderChecklist() {
   tasks.forEach(t => counts[t.urgency]++);
   document.getElementById('summaryPills').innerHTML = `
     <div class="pill"><span class="pill-dot" style="background:var(--red)"></span>${counts.urgent} today</div>
-    <div class="pill"><span class="pill-dot" style="background:var(--orange)"></span>${counts.soon} tomorrow</div>
-    <div class="pill"><span class="pill-dot" style="background:var(--yellow)"></span>${counts.upcoming} 2 days</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--orange)"></span>${counts.soon} next bus. day</div>
+    <div class="pill"><span class="pill-dot" style="background:var(--yellow)"></span>${counts.upcoming} 2 bus. days</div>
     <div class="pill"><span class="pill-dot" style="background:var(--text3)"></span>${counts.future} upcoming</div>
     <div class="pill"><span class="pill-dot" style="background:var(--green)"></span>${counts.booked} booked</div>
     <div class="pill"><span class="pill-dot" style="background:var(--purple)"></span>${counts.archived} archived</div>
@@ -956,9 +1002,11 @@ function renderChecklist() {
   const readonlyClass = currentRole !== 'admin' ? 'readonly-mode' : '';
 
   list.innerHTML = filtered.map(t => {
+    const unit = t.bizDays ? 'bus. day' : 'day';
+    const units = t.bizDays ? 'bus. days' : 'days';
     const daysLabel = t.daysLeft <= 0
-      ? (t.daysLeft === 0 ? 'Book <b>today</b>' : `<b>${Math.abs(t.daysLeft)}d overdue</b>`)
-      : `Book in <b>${t.daysLeft}d</b>`;
+      ? (t.daysLeft === 0 ? 'Book <b>today</b>' : `<b>${Math.abs(t.daysLeft)} ${Math.abs(t.daysLeft) !== 1 ? units : unit} overdue</b>`)
+      : `<b>${t.daysLeft}</b> ${t.daysLeft !== 1 ? units : unit} to book`;
     const pourLabel    = `Pour: ${t.pourRaw}`;
     const builderLabel = t.builder ? ` · ${t.builder}` : '';
     const statusLabel  = t.archived ? 'Archived' : t.booked ? 'Booked ✓' : daysLabel;
@@ -983,4 +1031,3 @@ function renderChecklist() {
 </script>
 </body>
 </html>
-
